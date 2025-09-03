@@ -1,0 +1,156 @@
+.profile-page {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.cover {
+  height: 200px;
+  background: linear-gradient(180deg, #ffb21e, #ffd06e);
+}
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: -60px;
+}
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 5px solid #fff;
+  background: #eee;
+}
+
+.card {
+  max-width: 600px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.actions {
+  margin-top: 16px;
+}
+.btn-edit {
+  padding: 8px 16px;
+  background: #ffb21e;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* --- Edit Overlay --- */
+.edit-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  width: 500px;
+  max-width: 90%;
+}
+
+.edit-cover img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.edit-avatar-wrap {
+  margin-top: -40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.btn-change {
+  margin-top: 8px;
+  background: #ffb21e;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.edit-card form {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+}
+.edit-card form label {
+  font-weight: bold;
+  margin-top: 8px;
+}
+.edit-card form input,
+.edit-card form textarea {
+  padding: 8px;
+  margin-top: 4px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.btn-cancel {
+  background: #f3f4f6;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-save {
+  background: #ffb21e;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+/* Create Page layout */
+.create-page{
+  min-height:100vh;
+  background:#f8fafc;
+  display:flex; align-items:flex-start; justify-content:center;
+  padding:24px 16px;
+}
+.create-card{
+  width:min(920px, 96%);
+  background:#fff; border-radius:16px; padding:20px;
+  box-shadow:0 8px 30px rgba(0,0,0,.08);
+}
+.create-title{ margin:6px 0 12px; font-size:22px; font-weight:800 }
+
+/* reuse from edit */
+.cover-placeholder{
+  width:100%; height:150px; border-radius:8px;
+  display:grid; place-items:center;
+  background:linear-gradient(180deg,#ffb21e,#ffd06e);
+  color:#1f2937; font-weight:700; opacity:.85;
+}
+.create-form{ display:flex; flex-direction:column; gap:8px; margin-top:12px }
+.create-form input, .create-form textarea{
+  padding:10px; border:1px solid #e5e7eb; border-radius:8px; outline:none;
+}
+.create-form input:focus, .create-form textarea:focus{
+  border-color:#ffb21e; box-shadow:0 0 0 3px rgba(255,178,30,.25);
+}
+
