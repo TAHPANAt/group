@@ -1,4 +1,6 @@
+// OrderPage.tsx
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./order.css";
 
@@ -35,24 +37,32 @@ const vouchers = [
   { code: "FREESHIP", amount: 36 },
 ];
 
-
-
 const OrderPage: React.FC = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [voucherModal, setVoucherModal] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState<string | null>(null);
   const [customVoucher, setCustomVoucher] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "qr" | null>(null);
+  const [paymentMethodID, setPaymentMethodID] = useState<number | null>(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchLatestOrder = async () => {
       try {
         const res = await axios.get("/api/orders/latest", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        setOrder(res.data.data);
+
+        const latestOrder = {
+          id: res.data.data.ID,
+          status: res.data.data.status,
+          total_price: res.data.data.total_price,
+          order_items: res.data.data.order_items,
+        };
+
+        console.log("📌 Latest order ID:", latestOrder.id);
+        console.log("📦 Full order data:", latestOrder);
+        setOrder(latestOrder);
       } catch (err) {
         console.error("Error fetching latest order:", err);
       }
@@ -67,9 +77,9 @@ const OrderPage: React.FC = () => {
 
   const subtotal = order
     ? order.order_items.reduce(
-      (acc, item) => acc + item.product.price * item.quantity,
-      0
-    )
+        (acc, item) => acc + item.product.price * item.quantity,
+        0
+      )
     : 0;
 
   const discount = selectedVoucher
@@ -78,30 +88,33 @@ const OrderPage: React.FC = () => {
 
   const total = subtotal - discount > 0 ? subtotal - discount : 0;
 
-  // กดปุ่มสั่งซื้อ
   const handleCheckout = async () => {
-    if (!paymentMethod || !order) return;
+    if (!paymentMethodID || !order) return;
 
     try {
       const res = await axios.post(
         "/api/payments",
         {
           order_id: order.id,
-          payment_type: paymentMethod === "qr" ? "QR" : "COD",
+          payment_method_id: paymentMethodID, // ส่ง id แทน type
         },
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
 
-      if (paymentMethod === "qr") {
-        window.location.href = "/pay-qrcode";
+      console.log("Payment created:", res.data);
+
+      if (paymentMethodID === 1) {
+        // QR Code
+        navigate(`/user/pay-qrcode/${order.id}`);
       } else {
-        window.location.href = "/checkout-success";
+        // COD
+        navigate("/checkout-success");
       }
-    } catch (err) {
-      console.error("Error creating payment:", err);
+    } catch (err: any) {
+      console.error("Error creating payment:", err.response?.data || err.message);
+      alert("Error creating payment: " + (err.response?.data?.error || err.message));
     }
   };
-
 
   return (
     <div className="order-container">
@@ -116,10 +129,6 @@ const OrderPage: React.FC = () => {
             <h3>📍 Delivery Address</h3>
             <p><strong>John Doe (+66)</strong> 0812345678</p>
             <p>Suranaree University of Technology, Suranawit Building 12, Nakhon Ratchasima, 30000</p>
-            <div className="address-actions">
-              <span className="default">Default</span>
-              <button className="change-btn">Change</button>
-            </div>
           </div>
 
           {/* Products Ordered */}
@@ -201,14 +210,14 @@ const OrderPage: React.FC = () => {
             <h3>💳 Payment Method</h3>
             <div style={{ display: "flex", gap: 20 }}>
               <button
-                className={paymentMethod === "cod" ? "selected-btn" : "payment-btn"}
-                onClick={() => setPaymentMethod("cod")}
+                className={paymentMethodID === 2 ? "selected-btn" : "payment-btn"}
+                onClick={() => setPaymentMethodID(2)}
               >
                 เก็บเงินปลายทาง
               </button>
               <button
-                className={paymentMethod === "qr" ? "selected-btn" : "payment-btn"}
-                onClick={() => setPaymentMethod("qr")}
+                className={paymentMethodID === 1 ? "selected-btn" : "payment-btn"}
+                onClick={() => setPaymentMethodID(1)}
               >
                 QR Code
               </button>
@@ -222,14 +231,14 @@ const OrderPage: React.FC = () => {
               <p>Discount ({selectedVoucher}): -฿{discount}</p>
             )}
             <h3>Total Payment: ฿{total.toLocaleString()}</h3>
-            {paymentMethod && <p>Payment Method: <strong>{paymentMethod === "cod" ? "Cash on Delivery" : "QR Payment"}</strong></p>}
+            {paymentMethodID && <p>Payment Method: <strong>{paymentMethodID === 2 ? "Cash on Delivery" : "QR Payment"}</strong></p>}
           </div>
-          {/* ปุ่มสั่งซื้อ */}
+
           <div className="order-submit">
             <button
               className="submit-btn"
               onClick={handleCheckout}
-              disabled={!paymentMethod}
+              disabled={!paymentMethodID}
             >
               สั่งซื้อ
             </button>

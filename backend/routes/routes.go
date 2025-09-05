@@ -67,9 +67,11 @@ func SetupRouter() *gin.Engine {
 		// ดึง cart ของ user
 
 		// Order / Checkout
-		api.POST("/order", middleware.Authz(), controller.Checkout)               // สร้าง order + order item
+		api.POST("/order", middleware.Authz(), controller.Checkout) // สร้าง order + order item
 		api.GET("/orders/latest", middleware.Authz(), controller.GetLatestOrder)
 
+		api.POST("/payments", controller.CreatePayment)
+		api.GET("/payments/qrcode/:order_id", controller.GetPaymentQRCode)
 	}
 
 	return r

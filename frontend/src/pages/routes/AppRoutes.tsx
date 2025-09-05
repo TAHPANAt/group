@@ -17,6 +17,7 @@ import Cart from "../cart/Cart";
 import CreateProfile from "../Profile/CreateProfile";
 import Account from "../Profile/Account";
 import OrderPage from "../order/order";
+import PayQRCodePage from "../payment/qrcodepage";
 
 
 
@@ -61,6 +62,7 @@ const router = createBrowserRouter([
       { path: "profile", element: <Profile /> },
       { path: "profile/edit", element: <EditShopProfile /> },
       { path: "*", element: <Navigate to="/user" replace /> },
+      { path: "pay-qrcode/:orderId", element: <PayQRCodePage /> }
     ],
   },
 ]);

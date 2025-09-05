@@ -42,7 +42,7 @@ func SetupDatabase() {
 		&entity.Member{},
 		&entity.Gender{},
 		&entity.Payment{},
-		&entity.Payment{},
+		&entity.PaymentMethod{},
 		&entity.People{},
 		&entity.Profile{},
 		

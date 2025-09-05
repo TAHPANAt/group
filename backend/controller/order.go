@@ -18,10 +18,6 @@ type CreateOrderPayload struct {
     } `json:"order_items"`
 }
 
-
-
-
-
 // GET /api/orders/latest
 func GetLatestOrder(c *gin.Context) {
     memberID := c.GetUint("member_id")
