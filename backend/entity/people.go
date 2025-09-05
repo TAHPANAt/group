@@ -14,6 +14,7 @@ type People struct {
     BirthDay  time.Time
     Address   string
 
+    
     GenderID uint
     Gender   Gender
 }

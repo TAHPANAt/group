@@ -1,0 +1,111 @@
+/* Layout */
+.cart-layout {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+/* Top orange bar */
+.topbar {
+  background: #ffa000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 20px;
+}
+.topbar .brand { font-weight: 700; margin-right: 16px; }
+.topbar .link { margin: 0 10px; }
+
+/* Content */
+.cart-content {
+  max-width: 1080px;
+  margin: 16px auto 40px;
+  padding: 0 12px;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0 16px;
+  gap: 16px;
+}
+.search-input { max-width: 440px; }
+
+/* Cards / sections */
+.section { border-radius: 10px; margin-bottom: 16px; }
+
+/* Header row */
+.table-header,
+.row {
+  display: grid;
+  grid-template-columns: 1fr 140px 180px 140px 120px; /* product | unit | qty | total | actions */
+  align-items: center;
+  gap: 12px;
+}
+.table-header { padding: 8px 12px; }
+.col { text-align: center; }
+
+/* Shop title */
+.shop-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 14px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 8px;
+}
+
+/* Product row */
+.row { padding: 10px 8px; }
+.cell { display: flex; align-items: center; }
+.cell.col { justify-content: center; }
+
+.product { gap: 10px; }
+.thumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #eaeaea;
+}
+.name { font-weight: 500; }
+
+/* Price/Qty/Total */
+.price, .total { font-weight: 600; }
+
+/* Voucher & footer */
+.voucher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Small screens */
+@media (max-width: 900px) {
+  .table-header, .row {
+    grid-template-columns: 1fr 110px 170px 110px 90px;
+  }
+}
+@media (max-width: 720px) {
+  .table-header { display: none; }
+  .row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .cell.col { justify-content: flex-start; }
+  .footer { flex-direction: column; gap: 12px; align-items: flex-start; }
+}
+
+.qty-displays {
+  color: #000;          /* สีตัวเลขดำ */
+  background-color: #fff; /* พื้นหลังเหมือนปุ่มปกติ */
+  cursor: default;      /* ไม่ให้เป็น pointer */
+  pointer-events: none; /* ป้องกันการคลิก */
+}
+

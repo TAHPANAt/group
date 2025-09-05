@@ -3,6 +3,7 @@ import { ShoppingCartOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { Button, Drawer } from 'antd';
 import useEcomStore from '../../../store/ecom-store';
+import axios from 'axios';
 
 type Props = {
     filteredProducts: any[];
@@ -12,12 +13,64 @@ const Cardlistproduct = ({ filteredProducts }: Props) => {
     const actionUpdateQuantity = useEcomStore((state) => state.actionUpdateQuantity)
     const actionRemoveProduct = useEcomStore((state) => state.actionRemoveProduct)
     const GettotalPrice = useEcomStore((state) => state.GettotalPrice)
+
+    const authHeader = useEcomStore((state) => state.authHeader);
+
     const carts = useEcomStore((state) => state.carts) as any[];
     console.log(carts)
     const [open, setOpen] = useState(false);
 
     const showDrawer = () => setOpen(true);
     const onClose = () => setOpen(false);
+
+    const handleSaveCart = async () => {
+        try {
+            const payload = {
+                cart_items: carts.map((item: any) => ({
+                    product_id: item.Product.ID,       // <-- ID ของสินค้า
+                    quantity: item.count,      // <-- จำนวนที่เลือก
+                })),
+            };
+
+            await axios.post("/api/cart", payload, {
+                headers: {
+                    ...authHeader(),
+                    "Content-Type": "application/json",
+                },
+            });
+
+            alert("บันทึกตะกร้าเรียบร้อยแล้ว");
+        } catch (err) {
+            console.error("Error saving cart:", err);
+            alert("เกิดข้อผิดพลาดในการบันทึกตะกร้า");
+        }
+    };
+
+    const handleUpdateCartItem = async (itemId: number, newQuantity: number) => {
+        try {
+            if (newQuantity < 1) {
+                // ลบสินค้าจาก backend
+                await axios.delete(`/api/cart/item/${itemId}`, { headers: { ...authHeader() } });
+                // ลบจาก frontend state
+                actionRemoveProduct(itemId);
+            } else {
+                // update quantity
+                const productId = carts.find((i) => i.ID === itemId)?.Product.ID;
+                await axios.post(
+                    "/api/cart",
+                    { cart_items: [{ product_id: productId, quantity: newQuantity }] },
+                    { headers: { ...authHeader(), "Content-Type": "application/json" } }
+                );
+                actionUpdateQuantity(itemId, newQuantity);
+            }
+        } catch (err) {
+            console.error("Error updating cart item:", err);
+            alert("อัปเดตตะกร้าไม่สำเร็จ");
+        }
+    };
+
+
+
 
     return (
         <div className="image-grid">
@@ -105,12 +158,44 @@ const Cardlistproduct = ({ filteredProducts }: Props) => {
 
                             <div style={{ display: "flex", gap: 8 }}>
 
-                                <Button size="small" icon={<ShoppingCartOutlined />} onClick={() => {
-                                    showDrawer();
-                                    actionAddtoCart(product);
-                                }}>
+                                <Button
+                                    size="small"
+                                    onClick={async () => {
+                                        try {
+                                            // เรียก action เพิ่มใน state ของ frontend
+                                            actionAddtoCart(product);
 
+                                            // ส่งข้อมูลไป backend ทันที
+                                            await axios.post(
+                                                "/api/cart",
+                                                {
+                                                    cart_items: [
+                                                        {
+                                                            product_id: product.Product.ID,
+                                                            quantity: 1, // เพิ่มทีละ 1
+                                                        },
+                                                    ],
+                                                },
+                                                {
+                                                    headers: {
+                                                        ...authHeader(),
+                                                        "Content-Type": "application/json",
+                                                    },
+                                                }
+                                            );
+
+                                            // เปิด Drawer ให้เห็นตะกร้า
+                                            showDrawer();
+                                        } catch (err) {
+                                            console.error("Error adding to cart:", err);
+                                            alert("เพิ่มสินค้าในตะกร้าไม่สำเร็จ");
+                                        }
+                                    }}
+                                >
+                                    เพิ่ม
                                 </Button>
+
+
                             </div>
                         </div>
 
@@ -132,21 +217,37 @@ const Cardlistproduct = ({ filteredProducts }: Props) => {
                     {carts.map((item, index) => (
                         <div key={index} className="cart-item">
 
-                            <div className="cart-item-image"><img src={ `http://localhost:8080${item?.Product?.ProductImage?.[0]?.image_path}`}  /></div>
+                            <div className="cart-item-image"><img src={`http://localhost:8080${item?.Product?.ProductImage?.[0]?.image_path}`} /></div>
 
                             <div className="cart-item-details">
                                 <h4>{item.Product.name}</h4>
                                 <p>{item.Product.description}</p>
                                 <div className="cart-item-qty">
-                                    <button onClick={() => actionUpdateQuantity(item.ID, item.count - 1)}>- </button>
+                                    <button onClick={() => handleUpdateCartItem(item.ID, item.count - 1)}>-</button>
                                     <span>{item.count}</span>
-                                    <button onClick={() => actionUpdateQuantity(item.ID, item.count + 1)}>+</button>
+                                    <button onClick={() => handleUpdateCartItem(item.ID, item.count + 1)}>+</button>
                                 </div>
+
                             </div>
 
                             <div className="cart-item-price">
                                 <div className="price">{item.Product.price * item.count}</div>
-                                <button className="remove"  onClick={() => actionRemoveProduct(item.ID)}>🗑️</button>
+                                // ปุ่มลบ
+                                <button className="remove" onClick={async () => {
+                                    try {
+                                        await axios.delete(`/api/cart/item/product/${item.Product.ID}`, {
+                                            headers: { ...authHeader() },
+                                        });
+                                        actionRemoveProduct(item.ID); // update frontend state
+                                    } catch (err) {
+                                        console.error("Error deleting cart item:", err);
+                                        alert("ลบสินค้าไม่สำเร็จ");
+                                    }
+                                }}>
+                                    🗑️
+                                </button>
+
+
                             </div>
 
                         </div>
@@ -156,7 +257,12 @@ const Cardlistproduct = ({ filteredProducts }: Props) => {
                         <span>{GettotalPrice()}</span>
                     </div>
 
-                    <button className="cart-checkout-btn">ดำเนินการชำระเงิน</button>
+                    <Link to="/Cart" className="no-border-button left-font-size-large">
+                        <button className="cart-checkout-btn">
+                            เพิ่มสินค้า
+                        </button>
+                    </Link>
+
                 </div>
             </Drawer>
 

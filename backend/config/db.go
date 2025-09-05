@@ -28,7 +28,11 @@ func ConnectionDB() {
 func SetupDatabase() {
 	db.AutoMigrate(
 		&entity.Seller{},
+		&entity.Cart{},
+		&entity.CartItem{},
 		&entity.Category{},
+		&entity.Order{},
+		&entity.OrderItem{},
 		&entity.Post_a_New_Product{},
 		&entity.Product{},
 		&entity.ProductImage{},
@@ -37,6 +41,8 @@ func SetupDatabase() {
 		&entity.ShopProfile{},
 		&entity.Member{},
 		&entity.Gender{},
+		&entity.Payment{},
+		&entity.Payment{},
 		&entity.People{},
 		&entity.Profile{},
 		
@@ -83,12 +89,28 @@ func SetupDatabase() {
 		{Gender: "หญิง"},
 		
 	}
+
 	for _, g := range genders {
 		result := db.FirstOrCreate(&g, entity.Gender{Gender: g.Gender})
 		if result.Error != nil {
 			log.Println("เพิ่มเพศล้มเหลว:", result.Error)
 		} else {
 			fmt.Println("เพิ่มเพศ:", g.Gender)
+		}
+	}
+
+	// เพิ่ม demo ข้อมูล PaymentMethod
+	paymentMethods := []entity.PaymentMethod{
+		{Method: "QR Code"},
+		{Method: "เก็บเงินปลายทาง"},
+	}
+
+	for _, pm := range paymentMethods {
+		result := db.FirstOrCreate(&pm, entity.PaymentMethod{Method: pm.Method})
+		if result.Error != nil {
+			log.Println("เพิ่ม PaymentMethod ล้มเหลว:", result.Error)
+		} else {
+			fmt.Println("เพิ่ม PaymentMethod:", pm.Method)
 		}
 	}
 }

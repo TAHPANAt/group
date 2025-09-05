@@ -5,7 +5,6 @@ import (
 
 	// เปลี่ยนตามโมดูลคุณ
 
-	// "example.com/GROUB/controller"
 	"example.com/GROUB/middlewares"
 
 	"example.com/GROUB/controller"
@@ -61,6 +60,16 @@ func SetupRouter() *gin.Engine {
 
 		api.POST("/profile", controller.CreateOrUpdateProfile)
 		api.GET("/profile/:memberId", controller.GetProfileByMember)
+		api.POST("/cart", middleware.Authz(), controller.CreateCart)
+		api.GET("/cart", middleware.Authz(), controller.GetMyCart)
+		// DELETE cart item by ProductID
+		api.DELETE("/cart/item/product/:product_id", middleware.Authz(), controller.DeleteCartItemByProduct)
+		// ดึง cart ของ user
+
+		// Order / Checkout
+		api.POST("/order", middleware.Authz(), controller.Checkout)               // สร้าง order + order item
+		api.GET("/orders/latest", middleware.Authz(), controller.GetLatestOrder)
+
 	}
 
 	return r

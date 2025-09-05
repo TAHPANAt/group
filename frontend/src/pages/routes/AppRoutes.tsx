@@ -16,6 +16,7 @@ import ShopPublic from "../ShopProfile/Profile/ShopPublic";
 import Cart from "../cart/Cart";
 import CreateProfile from "../Profile/CreateProfile";
 import Account from "../Profile/Account";
+import OrderPage from "../order/order";
 
 
 
@@ -31,6 +32,7 @@ const router = createBrowserRouter([
       { path: "Cart", element: <Cart /> },
       { path: "CreateProfile", element: <CreateProfile/> },
       { path: "Account", element: <Account/> },
+      { path: "Order", element: <OrderPage/> },
 
       { path: "register", element: <RegisterForm /> },
       { path: "*", element: <Navigate to="/" replace /> },

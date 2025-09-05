@@ -48,7 +48,7 @@ func Register(c *gin.Context) {
 
 	db := config.DB()
 
-	// เช็ค username ซ้ำ (case-insensitive)
+	// เช็ค username ซ้ำ
 	var uCount int64
 	if err := db.Model(&entity.Member{}).
 		Where("LOWER(user_name) = LOWER(?)", req.Username).
@@ -61,7 +61,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// เช็ค email ซ้ำ ถ้ามีส่งมา
+	// เช็ค email ซ้ำ
 	if req.Email != nil && *req.Email != "" {
 		var eCount int64
 		if err := db.Model(&entity.People{}).
@@ -95,8 +95,9 @@ func Register(c *gin.Context) {
 
 	var m entity.Member
 	var p entity.People
+	var cart entity.Cart
 
-	// ใช้ Transaction กัน half-save
+	// Transaction สร้าง People -> Member -> Cart
 	if err := db.Transaction(func(tx *gorm.DB) error {
 		p = entity.People{
 			FirstName: req.FirstName,
@@ -132,6 +133,15 @@ func Register(c *gin.Context) {
 		if err := tx.Create(&m).Error; err != nil {
 			return err
 		}
+
+		// สร้าง Cart ผูกกับ Member
+		cart = entity.Cart{
+			MemberID: m.ID,
+		}
+		if err := tx.Create(&cart).Error; err != nil {
+			return err
+		}
+
 		return nil
 	}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "register failed", "error": err.Error()})
@@ -150,7 +160,6 @@ func Register(c *gin.Context) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			// Issuer: "groub-api",
 		},
 	}
 	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -160,7 +169,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// เก็บ format วันเกิด
+	// format วันเกิด
 	birthday := ""
 	if bdayPtr != nil {
 		birthday = bdayPtr.Format("2006-01-02")
@@ -182,6 +191,7 @@ func Register(c *gin.Context) {
 				"address":   p.Address,
 				"genderID":  p.GenderID,
 			},
+			"cartID": cart.ID, // เพิ่ม cartID ให้ frontend รู้
 		},
 		"token": signed,
 	})
@@ -203,6 +213,7 @@ func Login(c *gin.Context) {
 		Preload("People").
 		Preload("Seller").
 		Preload("Seller.ShopProfile").
+		Preload("Cart"). // <-- preload cart
 		Where("LOWER(user_name) = LOWER(?)", req.Username).
 		First(&m).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -271,8 +282,9 @@ func Login(c *gin.Context) {
 				"address":   m.People.Address,
 				"genderID":  m.People.GenderID,
 			},
-			"sellerID": sellerID, // null ถ้ายังไม่เป็นผู้ขาย
-			"hasShop":  hasShop,  // true เมื่อมี ShopProfile
+			"cartID":   m.Cart.ID, // frontend ใช้งานได้เลย
+			"sellerID": sellerID,
+			"hasShop":  hasShop,
 		},
 		"token":   signed,
 		"message": "Login success",
