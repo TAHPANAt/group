@@ -10,62 +10,91 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// สร้าง Payment โดยใช้ PaymentMethodID
 func CreatePayment(c *gin.Context) {
-	type PaymentPayload struct {
-		OrderID         uint `json:"order_id"`
-		PaymentMethodID uint `json:"payment_method_id"` // 1 = QR, 2 = COD
-	}
+    type PaymentPayload struct {
+        OrderID         uint `json:"order_id"`
+        PaymentMethodID uint `json:"payment_method_id"` // 1 = QR, 2 = COD
+    }
 
-	var payload PaymentPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+    var payload PaymentPayload
+    if err := c.ShouldBindJSON(&payload); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
 
-	db := config.DB()
+    db := config.DB()
 
-	// ดึง order
-	var order entity.Order
-	if err := db.Where("id = ?", payload.OrderID).First(&order).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
-		return
-	}
+    // ดึง order
+    var order entity.Order
+    if err := db.Preload("OrderItems").Where("id = ?", payload.OrderID).First(&order).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+        return
+    }
 
-	// ดึง PaymentMethod
-	var pm entity.PaymentMethod
-	if err := db.Where("id = ?", payload.PaymentMethodID).First(&pm).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payment method"})
-		return
-	}
+    // ดึง PaymentMethod
+    var pm entity.PaymentMethod
+    if err := db.Where("id = ?", payload.PaymentMethodID).First(&pm).Error; err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payment method"})
+        return
+    }
 
-	// สร้าง status
-	var statusValue string
-	if pm.Method == "เก็บเงินปลายทาง" {
-		statusValue = "COD"
-	} else if pm.Method == "QR Code" {
-		statusValue = fmt.Sprintf("ORDER:%d;AMOUNT:%.2f;%d", order.ID, order.TotalPrice, time.Now().Unix())
-	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payment method"})
-		return
-	}
+    // สร้าง status ของ payment
+    var statusValue string
+    if pm.Method == "เก็บเงินปลายทาง" {
+        statusValue = "COD"
+    } else if pm.Method == "QR Code" {
+        statusValue = fmt.Sprintf("ORDER:%d;AMOUNT:%.2f;%d", order.ID, order.TotalPrice, time.Now().Unix())
+    } else {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payment method"})
+        return
+    }
 
-	// สร้าง Payment
-	payment := entity.Payment{
-		OrderID:         order.ID,
-		PaymentMethodID: pm.ID,
-		Status:          statusValue,
-	}
+    // สร้าง Payment
+    payment := entity.Payment{
+        OrderID:         order.ID,
+        PaymentMethodID: pm.ID,
+        Status:          statusValue,
+    }
 
-	if err := db.Create(&payment).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+    if err := db.Create(&payment).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
 
-	c.JSON(http.StatusOK, gin.H{
-		"payment_id": payment.ID,
-		"status":     payment.Status,
-	})
+    // =========================
+    // ลบ CartItem ที่เกี่ยวข้อง
+    // =========================
+    var cartItemIDs []uint
+    for _, oi := range order.OrderItems {
+        if oi.CartItemID != 0 {
+            cartItemIDs = append(cartItemIDs, oi.CartItemID)
+        }
+    }
+
+    fmt.Println("CartItemIDs to delete:", cartItemIDs)
+
+    if len(cartItemIDs) > 0 {
+        if err := db.Where("id IN ?", cartItemIDs).Delete(&entity.CartItem{}).Error; err != nil {
+            fmt.Println("Failed to delete cart items:", err)
+        } else {
+            fmt.Println("Successfully deleted CartItems:", cartItemIDs)
+        }
+    } else {
+        fmt.Println("No CartItems to delete")
+    }
+    // =========================
+
+    // อัพเดท Order.Status เป็น "successful"
+    order.Status = "successful"
+    if err := db.Save(&order).Error; err != nil {
+        fmt.Println("Failed to update order status:", err)
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "payment_id": payment.ID,
+        "status":     payment.Status,
+        "order_status": order.Status,
+    })
 }
 
 // ดึง QR Code ของคำสั่งซื้อ

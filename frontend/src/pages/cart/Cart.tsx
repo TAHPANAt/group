@@ -4,9 +4,7 @@ import { Button, Card, Checkbox, Space, Typography } from "antd";
 import useEcomStore from "../../store/ecom-store";
 import axios from "axios";
 import "./Cart.css";
-import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-
 
 const { Text } = Typography;
 
@@ -14,10 +12,8 @@ export default function CartPage() {
   const carts = useEcomStore((state) => state.carts);
   const actionUpdateQuantity = useEcomStore((state) => state.actionUpdateQuantity);
   const actionRemoveProduct = useEcomStore((state) => state.actionRemoveProduct);
-  const GettotalPrice = useEcomStore((state) => state.GettotalPrice);
   const authHeader = useEcomStore((state) => state.authHeader);
-  const navigate = useNavigate(); // ✅ สร้าง navigate
-
+  const navigate = useNavigate();
 
   // Checkbox
   const allChecked = carts.every((i: any) => i.checked);
@@ -74,7 +70,7 @@ export default function CartPage() {
     });
   };
 
-  // ฟังก์ชันชำระเงิน / บันทึก order item
+  // ฟังก์ชันสั่งซื้อ → แค่สร้าง order และไปหน้า /Order
   const handleCheckout = async () => {
     const selectedItems = carts.filter((i: any) => i.checked);
     if (selectedItems.length === 0) {
@@ -98,21 +94,13 @@ export default function CartPage() {
 
       alert("สั่งซื้อสำเร็จ บันทึกข้อมูลเรียบร้อยแล้ว");
 
-      // ล้าง cart state หลังสั่งซื้อ
-      useEcomStore.setState({ carts: [] });
-
-      // ✅ navigate ไปหน้า order แทน window.location.href
+      // ✅ ไม่ต้องเคลียร์ cart ตรงนี้
       navigate("/Order");
     } catch (err) {
       console.error("Error during checkout:", err);
       alert("เกิดข้อผิดพลาดในการสั่งซื้อ");
     }
   };
-
-
-
-
-
 
   const total = carts
     .filter((i: any) => i.checked)
@@ -185,27 +173,14 @@ export default function CartPage() {
         <div style={{ marginTop: 16 }}>
           <Text strong>รวมทั้งหมด: {total} บาท</Text>
 
-          {!carts.some((i: any) => i.checked) ? (
-            <Button
-              type="primary"
-              icon={<ShoppingOutlined />}
-              style={{ marginLeft: 16 }}
-              onClick={() => alert("กรุณาเลือกสินค้าอย่างน้อย 1 ชิ้น")}
-            >
-              สั่งซื้อ
-            </Button>
-          ) : (
-            <Button
-              type="primary"
-              icon={<ShoppingOutlined />}
-              style={{ marginLeft: 16 }}
-              onClick={handleCheckout}
-            >
-              สั่งซื้อ
-            </Button>
-          )}
-
-
+          <Button
+            type="primary"
+            icon={<ShoppingOutlined />}
+            style={{ marginLeft: 16 }}
+            onClick={handleCheckout}
+          >
+            สั่งซื้อ
+          </Button>
         </div>
       </Card>
     </div>

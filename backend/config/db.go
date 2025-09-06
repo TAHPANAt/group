@@ -31,8 +31,9 @@ func SetupDatabase() {
 		&entity.Cart{},
 		&entity.CartItem{},
 		&entity.Category{},
-		&entity.Discountcode{},
 		&entity.DiscountUsage{},
+		&entity.Discountcode{},
+		
 		&entity.Order{},
 		&entity.OrderItem{},
 		&entity.Post_a_New_Product{},
@@ -115,4 +116,20 @@ func SetupDatabase() {
 			fmt.Println("เพิ่ม PaymentMethod:", pm.Method)
 		}
 	}
+	// ====== เมสเซ็นเจอร์: จัดลำดับ parent -> child ======
+	if err := db.AutoMigrate(
+		&entity.FriendLink{},
+		&entity.DMThread{}, // parent
+		&entity.DMPost{},   // child of DMThread
+		&entity.DMFile{},   // child of DMPost
+	); err != nil {
+		log.Fatal("AutoMigrate (dm) failed:", err)
+	}
+
+	// เติมคอลัมน์ LastMessageAt ถ้ายังไม่มี (กัน ORDER BY last_message_at ล้ม)
+	m := db.Migrator()
+	if !m.HasColumn(&entity.DMThread{}, "LastMessageAt") && !m.HasColumn(&entity.DMThread{}, "last_message_at") {
+		_ = m.AddColumn(&entity.DMThread{}, "LastMessageAt")
+	}
+
 }

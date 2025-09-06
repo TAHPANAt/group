@@ -92,6 +92,10 @@ const Navbar = () => {
               My Account
             
           </Link>
+          <Link to="/Messenger" className="no-border-button left-font-size-large">
+            message
+
+          </Link>
         </div>
       </div>
     </div>

@@ -16,11 +16,11 @@ func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"http://localhost:5173", "http://localhost:3000"},
+		AllowOrigins: []string{"http://localhost:5173", "http://localhost:3000", "http://localhost:8081"},
 		// หรือ frontend origin ของคุณ
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Requested-With", "X-User-Id"},
+		ExposeHeaders:    []string{"Content-Length", "Authorization"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
@@ -76,8 +76,29 @@ func SetupRouter() *gin.Engine {
 		// ----------------- ส่วนของ DiscountCode -----------------FFFFFFAAAAMMMMMEEEEE
 		api.GET("/discountcodes", controller.ListDiscountCodes)
 		api.POST("/discountcodes", controller.CreateDiscountCode)
+		api.POST("/discount-usage", middleware.Authz(), controller.CreateDiscountUsage)
+
 		api.PUT("/discountcodes/:id", controller.UpdateDiscountCode)
 		api.DELETE("/discountcodes/:id", controller.DeleteDiscountCode)
+		api.GET("/discounts", controller.GetAvailableDiscounts)
+		api.PATCH("/orders/update-total", controller.UpdateOrderTotal)
+
+		// ----------------- Messenger (DM) -----------------
+		dm := api.Group("/dm")
+		{
+			// ไม่ครอบ Authz() เพื่อให้ dev auth แบบ Bearer uid:<id> ใช้งานได้
+			dm.POST("/threads/open", controller.OpenThread)
+			dm.GET("/threads", controller.ListThreads)
+			dm.DELETE("/threads/:id", controller.DeleteThread)
+
+			dm.GET("/threads/:id/posts", controller.ListPosts)
+			dm.POST("/threads/:id/posts", controller.CreatePost)
+			dm.PATCH("/posts/:id", controller.EditPost)
+			dm.DELETE("/posts/:id", controller.DeletePost)
+
+			dm.PATCH("/threads/:id/read", controller.MarkRead)
+			dm.POST("/upload", controller.UploadFile)
+		}
 	}
 
 	return r

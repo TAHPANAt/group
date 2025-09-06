@@ -115,8 +115,6 @@ const ShopProfile: React.FC = () => {
           <Link to="/user/profile/edit" aria-label="แก้ไขโปรไฟล์">
             <EditOutlined />
           </Link>
-          {/* ปุ่มลบโปรไฟล์ (ถ้าทำ) */}
-          <DeleteOutlined />
         </div>
       </div>
 

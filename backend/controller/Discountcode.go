@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -106,7 +107,6 @@ func CreateDiscountCode(c *gin.Context) {
 		Amount:     dto.Amount,
 		MinOrder:   dto.MinOrder,
 		UsageLimit: dto.UsageLimit,
-		TimesUsed:  0,
 		StartsAt:   startsAt,
 		ExpiresAt:  expiresAt,
 		ImageURL:   imageURL,
@@ -189,4 +189,156 @@ func DeleteDiscountCode(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
+}
+
+func GetAvailableDiscounts(c *gin.Context) {
+    totalStr := c.Query("total")
+    total, err := strconv.Atoi(totalStr)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid total"})
+        return
+    }
+
+    db := config.DB()
+    var discounts []entity.Discountcode
+    if err := db.Where("min_order <= ?", total).Find(&discounts).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch discounts"})
+        return
+    }
+
+    // Map ให้แน่ใจว่า frontend จะได้ field id ถูกต้อง
+    result := make([]gin.H, len(discounts))
+    for i, d := range discounts {
+        result[i] = gin.H{
+            "id":       d.ID,
+            "name":     d.Name,
+            "amount":   d.Amount,
+            "min_order": d.MinOrder,
+            "image_url": d.ImageURL,
+        }
+    }
+
+    c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+type UpdateTotalInput struct {
+    OrderID  uint    `json:"order_id"`
+    Subtotal float64 `json:"subtotal"`  // ยอดรวมก่อน discount
+    Discount float64 `json:"discount"`  // จำนวนส่วนลดจาก frontend
+}
+
+
+// PATCH /api/orders/update-total
+func UpdateOrderTotal(c *gin.Context) {
+    var input UpdateTotalInput
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    db := config.DB()
+
+    // โหลด order
+    var order entity.Order
+    if err := db.First(&order, input.OrderID).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+        return
+    }
+
+    // คำนวณ total โดยใช้ยอดจาก frontend
+    total := input.Subtotal - input.Discount
+    if total < 0 {
+        total = 0
+    }
+
+    order.TotalPrice = total
+
+    if err := db.Save(&order).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update order total"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "order_id":    order.ID,
+        "total_price": order.TotalPrice,
+    })
+}
+type DiscountUsageInput struct {
+	OrderID        uint `json:"order_id"`
+	DiscountcodeID uint `json:"discountcode_id"`
+}
+
+// CreateDiscountUsage handles POST /api/discount-usage
+func CreateDiscountUsage(c *gin.Context) {
+	// Log: เริ่มฟังก์ชัน
+	fmt.Println("=== CreateDiscountUsage called ===")
+
+	// ดึง member_id จาก context
+	memberIDInterface, exists := c.Get("member_id")
+	if !exists {
+		fmt.Println("member_id not found in context")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "member_id not found in context"})
+		return
+	}
+	fmt.Println("member_idInterface:", memberIDInterface)
+
+	// แปลง member_id เป็น uint รองรับ float64/int/uint
+	var memberID uint
+	switch v := memberIDInterface.(type) {
+	case float64:
+		memberID = uint(v)
+	case int:
+		memberID = uint(v)
+	case uint:
+		memberID = v
+	default:
+		fmt.Println("invalid member_id type:", v)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid member_id type"})
+		return
+	}
+	fmt.Println("Parsed memberID:", memberID)
+
+	// รับ input จาก frontend
+	var input DiscountUsageInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		fmt.Println("Failed to bind JSON:", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	fmt.Println("Received input:", input)
+
+	// ตรวจสอบ input ไม่เป็น 0
+	if input.OrderID == 0 || input.DiscountcodeID == 0 {
+		fmt.Println("Invalid input: order_id or discountcode_id is 0")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "order_id and discountcode_id must be provided"})
+		return
+	}
+
+	// Log: ก่อนสร้าง DiscountUsage struct
+	fmt.Println("Creating DiscountUsage struct...")
+
+	// สร้าง DiscountUsage
+	discountUsage := entity.DiscountUsage{
+		MemberID:       memberID,
+		DiscountcodeID: input.DiscountcodeID,
+		OrderID:        input.OrderID,
+		
+	}
+	fmt.Println("DiscountUsage struct:", discountUsage)
+
+	// Log: ก่อนบันทึกลง DB
+	fmt.Println("Saving DiscountUsage to DB...")
+
+	// บันทึกลง DB
+	if err := config.DB().Create(&discountUsage).Error; err != nil {
+		fmt.Println("Failed to save discount usage:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Log: บันทึกสำเร็จ
+	fmt.Println("DiscountUsage saved successfully:", discountUsage)
+
+	// ส่ง response กลับ frontend
+	c.JSON(http.StatusOK, gin.H{"data": discountUsage})
 }

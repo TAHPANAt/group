@@ -19,6 +19,7 @@ import Account from "../Profile/Account";
 import OrderPage from "../order/order";
 import PayQRCodePage from "../payment/qrcodepage";
 import Createcode from "../DiscountCode/Createcode";
+import Messenger from "../Messenger/Meesenger";
 
 
 
@@ -35,6 +36,8 @@ const router = createBrowserRouter([
       { path: "CreateProfile", element: <CreateProfile/> },
       { path: "Account", element: <Account/> },
       { path: "Order", element: <OrderPage/> },
+
+      { path: "Messenger", element: <Messenger /> },
 
       { path: "register", element: <RegisterForm /> },
       { path: "*", element: <Navigate to="/" replace /> },

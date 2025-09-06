@@ -1,7 +1,7 @@
-// OrderPage.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import useEcomStore from "../../store/ecom-store";
 import "./order.css";
 
 interface ProductImage {
@@ -31,50 +31,48 @@ interface Order {
   order_items: OrderItem[];
 }
 
-const vouchers = [
-  { code: "DISCOUNT10", amount: 10 },
-  { code: "DISCOUNT50", amount: 50 },
-  { code: "FREESHIP", amount: 36 },
-];
+interface Voucher {
+  id?: number;
+  code: string;
+  amount: number;
+  minOrder?: number;
+  imageURL?: string;
+}
 
 const OrderPage: React.FC = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [voucherModal, setVoucherModal] = useState(false);
-  const [selectedVoucher, setSelectedVoucher] = useState<string | null>(null);
+  const [availableVouchers, setAvailableVouchers] = useState<Voucher[]>([]);
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const [customVoucher, setCustomVoucher] = useState("");
   const [paymentMethodID, setPaymentMethodID] = useState<number | null>(null);
-
+  const tokenInStore = useEcomStore((state: any) => state.token);
   const navigate = useNavigate();
+  const clearCart = () => useEcomStore.setState({ carts: [] });
 
+  // Fetch latest order
   useEffect(() => {
     const fetchLatestOrder = async () => {
       try {
         const res = await axios.get("/api/orders/latest", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: { Authorization: `Bearer ${tokenInStore}` },
         });
-
         const latestOrder = {
           id: res.data.data.ID,
           status: res.data.data.status,
           total_price: res.data.data.total_price,
           order_items: res.data.data.order_items,
         };
-
-        console.log("📌 Latest order ID:", latestOrder.id);
-        console.log("📦 Full order data:", latestOrder);
+        console.log("Fetched latest order:", latestOrder);
         setOrder(latestOrder);
       } catch (err) {
         console.error("Error fetching latest order:", err);
       }
     };
     fetchLatestOrder();
-  }, []);
+  }, [tokenInStore]);
 
-  const applyVoucher = (code: string) => {
-    setSelectedVoucher(code);
-    setVoucherModal(false);
-  };
-
+  // Calculate subtotal
   const subtotal = order
     ? order.order_items.reduce(
         (acc, item) => acc + item.product.price * item.quantity,
@@ -82,37 +80,145 @@ const OrderPage: React.FC = () => {
       )
     : 0;
 
-  const discount = selectedVoucher
-    ? vouchers.find((v) => v.code === selectedVoucher)?.amount || 0
-    : 0;
+  // Fetch available vouchers from backend based on subtotal
+  useEffect(() => {
+    const fetchVouchers = async () => {
+      if (!subtotal) return;
+      try {
+        const res = await axios.get(`/api/discounts?total=${subtotal}`, {
+          headers: { Authorization: `Bearer ${tokenInStore}` },
+        });
 
-  const total = subtotal - discount > 0 ? subtotal - discount : 0;
+        const vouchers = res.data.data.map((v: any) => ({
+          id: v.id,           // <-- ต้องเป็น v.id ไม่ใช่ v.ID
+          code: v.name,       // <-- match กับ backend
+          amount: v.amount,
+          minOrder: v.min_order,
+          imageURL: v.image_url,
+        }));
 
-  const handleCheckout = async () => {
-    if (!paymentMethodID || !order) return;
+        console.log("Fetched vouchers:", vouchers); // ✅ debug
+        setAvailableVouchers(vouchers);
+      } catch (err) {
+        console.error("Error fetching vouchers:", err);
+      }
+    };
+    fetchVouchers();
+}, [subtotal, tokenInStore]);
+
+  // Apply voucher from backend
+  const applyVoucher = async (voucher: Voucher) => {
+    console.log("Applying voucher:", voucher.code, "for order:", order?.id);
+    if (!order) return;
+
+    setSelectedVoucher(voucher);
+    setVoucherModal(false);
+
+    const discountAmount = voucher.amount || 0;
 
     try {
+      const res = await axios.patch(
+        "/api/orders/update-total",
+        {
+          order_id: order.id,
+          subtotal: subtotal,
+          discount: discountAmount,
+        },
+        { headers: { Authorization: `Bearer ${tokenInStore}` } }
+      );
+
+      console.log("Updated order total:", res.data.total_price);
+      setOrder((prev) =>
+        prev ? { ...prev, total_price: res.data.total_price } : prev
+      );
+    } catch (err) {
+      console.error("Failed to apply voucher:", err);
+      alert("Failed to apply voucher");
+    }
+  };
+
+  // Apply custom voucher by validating with backend
+  const applyCustomVoucher = async (code: string) => {
+    if (!order || !code) return;
+
+    try {
+      const res = await axios.get(`/api/discounts/validate?code=${code}`, {
+        headers: { Authorization: `Bearer ${tokenInStore}` },
+      });
+      const voucher = res.data.data;
+
+      if (!voucher || !voucher.id) {
+        alert("Invalid voucher code");
+        return;
+      }
+
+      console.log("Custom voucher validated:", voucher);
+      applyVoucher({
+        id: voucher.id,
+        code: voucher.name,
+        amount: voucher.amount,
+        minOrder: voucher.min_order,
+        imageURL: voucher.image_url,
+      });
+    } catch (err) {
+      console.error("Failed to validate custom voucher:", err);
+      alert("Failed to validate custom voucher");
+    }
+  };
+
+  const discount = selectedVoucher ? selectedVoucher.amount : 0;
+
+  // Checkout
+  const handleCheckout = async () => {
+    console.log("handleCheckout called");
+    if (!order || !paymentMethodID) return;
+
+    console.log("selectedVoucher at checkout:", selectedVoucher);
+    try {
+      if (selectedVoucher?.id) {
+        console.log("Sending discount usage before checkout:", {
+          order_id: order.id,
+          discountcode_id: selectedVoucher.id,
+          token: tokenInStore,
+        });
+
+        await axios.post(
+          "/api/discount-usage",
+          { order_id: order.id, discountcode_id: selectedVoucher.id },
+          { headers: { Authorization: `Bearer ${tokenInStore}` } }
+        );
+        console.log("DiscountUsage created!");
+      } else {
+        console.log("Selected voucher has no id, skipping discount usage");
+      }
+
+      console.log("Creating payment for order:", order.id);
       const res = await axios.post(
         "/api/payments",
         {
           order_id: order.id,
-          payment_method_id: paymentMethodID, // ส่ง id แทน type
+          payment_method_id: paymentMethodID,
         },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+        { headers: { Authorization: `Bearer ${tokenInStore}` } }
       );
 
       console.log("Payment created:", res.data);
 
+      clearCart();
+
       if (paymentMethodID === 1) {
-        // QR Code
         navigate(`/user/pay-qrcode/${order.id}`);
       } else {
-        // COD
         navigate("/checkout-success");
       }
     } catch (err: any) {
-      console.error("Error creating payment:", err.response?.data || err.message);
-      alert("Error creating payment: " + (err.response?.data?.error || err.message));
+      console.error(
+        "Checkout failed:",
+        err.response?.data || err.message
+      );
+      alert(
+        "Checkout failed: " + (err.response?.data?.error || err.message)
+      );
     }
   };
 
@@ -171,7 +277,7 @@ const OrderPage: React.FC = () => {
           <div className="voucher-card">
             <span>Platform Voucher</span>
             <button className="voucher-btn" onClick={() => setVoucherModal(true)}>
-              {selectedVoucher ? `Applied: ${selectedVoucher}` : "Select or enter code"}
+              {selectedVoucher ? `Applied: ${selectedVoucher.code}` : "Select or enter code"}
             </button>
           </div>
 
@@ -181,10 +287,14 @@ const OrderPage: React.FC = () => {
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <h3>Select Voucher</h3>
                 <ul>
-                  {vouchers.map((v) => (
+                  {availableVouchers.map((v) => (
                     <li key={v.code}>
-                      <button className="voucher-option" onClick={() => applyVoucher(v.code)}>
-                        {v.code} - ฿{v.amount}
+                      <button
+                        className="voucher-option"
+                        onClick={() => applyVoucher(v)}
+                        disabled={subtotal < (v.minOrder || 0)}
+                      >
+                        {v.code} - ฿{v.amount} {v.minOrder ? `(Min ฿${v.minOrder})` : ""}
                       </button>
                     </li>
                   ))}
@@ -196,7 +306,12 @@ const OrderPage: React.FC = () => {
                     value={customVoucher}
                     onChange={(e) => setCustomVoucher(e.target.value)}
                   />
-                  <button className="apply-btn" onClick={() => applyVoucher(customVoucher)}>Apply</button>
+                  <button
+                    className="apply-btn"
+                    onClick={() => applyCustomVoucher(customVoucher)}
+                  >
+                    Apply
+                  </button>
                 </div>
                 <button className="close-btn" onClick={() => setVoucherModal(false)}>
                   Close
@@ -205,7 +320,7 @@ const OrderPage: React.FC = () => {
             </div>
           )}
 
-          {/* เลือกวิธีชำระเงิน */}
+          {/* Payment Method */}
           <div className="order-card">
             <h3>💳 Payment Method</h3>
             <div style={{ display: "flex", gap: 20 }}>
@@ -226,21 +341,32 @@ const OrderPage: React.FC = () => {
 
           {/* Order Summary */}
           <div className="order-summary">
-            <p>Order Total ({order.order_items.length} Items): <strong>฿{subtotal.toLocaleString()}</strong></p>
-            {selectedVoucher && (
-              <p>Discount ({selectedVoucher}): -฿{discount}</p>
+            <p>
+              Order Total ({order.order_items.length} Items): <strong>฿{subtotal.toLocaleString()}</strong>
+            </p>
+            {selectedVoucher && subtotal >= (selectedVoucher.minOrder || 0) && (
+              <p>
+                Discount ({selectedVoucher.code}): -฿{discount.toLocaleString()}
+              </p>
             )}
-            <h3>Total Payment: ฿{total.toLocaleString()}</h3>
-            {paymentMethodID && <p>Payment Method: <strong>{paymentMethodID === 2 ? "Cash on Delivery" : "QR Payment"}</strong></p>}
+            <h3>
+              Total Payment: <strong>฿{Math.max(subtotal - discount, 0).toLocaleString()}</strong>
+            </h3>
+            {paymentMethodID && (
+              <p>
+                Payment Method: <strong>{paymentMethodID === 2 ? "Cash on Delivery" : "QR Payment"}</strong>
+              </p>
+            )}
           </div>
 
+          {/* Checkout Button */}
           <div className="order-submit">
             <button
               className="submit-btn"
               onClick={handleCheckout}
               disabled={!paymentMethodID}
             >
-              สั่งซื้อ
+              ชำระเงิน
             </button>
           </div>
         </>
