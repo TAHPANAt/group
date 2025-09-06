@@ -31,6 +31,8 @@ func SetupDatabase() {
 		&entity.Cart{},
 		&entity.CartItem{},
 		&entity.Category{},
+		&entity.Discountcode{},
+		&entity.DiscountUsage{},
 		&entity.Order{},
 		&entity.OrderItem{},
 		&entity.Post_a_New_Product{},

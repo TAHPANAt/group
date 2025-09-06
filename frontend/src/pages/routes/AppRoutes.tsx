@@ -18,6 +18,7 @@ import CreateProfile from "../Profile/CreateProfile";
 import Account from "../Profile/Account";
 import OrderPage from "../order/order";
 import PayQRCodePage from "../payment/qrcodepage";
+import Createcode from "../DiscountCode/Createcode";
 
 
 
@@ -47,6 +48,8 @@ const router = createBrowserRouter([
       { index: true, element: <Category /> },
       { path: "category", element: <Category /> },
       { path: "shopcategory", element: <CategoryShop /> },
+      { path: "Createcode", element: <Createcode /> },
+
 
     ],
   },

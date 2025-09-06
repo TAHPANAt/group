@@ -72,6 +72,12 @@ func SetupRouter() *gin.Engine {
 
 		api.POST("/payments", controller.CreatePayment)
 		api.GET("/payments/qrcode/:order_id", controller.GetPaymentQRCode)
+
+		// ----------------- ส่วนของ DiscountCode -----------------FFFFFFAAAAMMMMMEEEEE
+		api.GET("/discountcodes", controller.ListDiscountCodes)
+		api.POST("/discountcodes", controller.CreateDiscountCode)
+		api.PUT("/discountcodes/:id", controller.UpdateDiscountCode)
+		api.DELETE("/discountcodes/:id", controller.DeleteDiscountCode)
 	}
 
 	return r

@@ -42,7 +42,7 @@ const AdminLayout: React.FC = () => {
                             case "1": navigate("/admin"); break;
                             case "2": navigate("/admin"); break;
                             case "3": navigate("/admin"); break;
-                            case "4": navigate("/admin"); break;
+                            case "4": navigate("/admin/Createcode"); break;
                             case "5": navigate("/admin/category"); break;
                             case "6": navigate("/admin/shopcategory"); break;
                             default: break;
@@ -67,7 +67,7 @@ const AdminLayout: React.FC = () => {
                         {
                             key: '4',
                             icon: <SettingOutlined />,
-                            label: 'ตั้งค่า',
+                            label: 'สร้างโค้ดส่วนลด',
                         },
                         {
                             key: '5',
