@@ -1,0 +1,71 @@
+.report-page {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+  background: #f9fafb;
+  min-height:50vh;
+}
+
+.report-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px;
+}
+
+.report-card h2 {
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  text-align: center;
+  color: #333;
+}
+
+.report-form label {
+  font-weight: 600;
+  margin-top: 1rem;
+  display: block;
+}
+
+.report-form input,
+.report-form select {
+  width: 100%;
+  padding: 0.6rem;
+  margin-top: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+}
+
+.report-actions {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.btn-save {
+  background: #2563eb;
+  color: white;
+  padding: 0.7rem 1.5rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 0.7rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-save:hover {
+  background: #1e40af;
+}
+.report-form textarea {
+  width: 100%;              /* กว้างเต็มพื้นที่ parent */
+  max-width: 100%;          /* ไม่ให้ล้น */
+  min-height: 120px;        /* สูงขั้นต่ำ */
+  padding: 0.6rem;
+  margin-top: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  resize: vertical;         /* ให้ user ปรับสูงได้เอง */
+  box-sizing: border-box;   /* กันล้น */
+}

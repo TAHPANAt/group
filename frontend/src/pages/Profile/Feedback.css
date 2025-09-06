@@ -1,0 +1,79 @@
+.feedback-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.feedback-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  width: 500px;
+  max-width: 95%;
+  margin-bottom: 24px;
+}
+
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feedback-form input,
+.feedback-form textarea,
+.feedback-form select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 6px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.rating-stars .star {
+  color: #ddd;
+  transition: color 0.2s;
+}
+
+.rating-stars .star.selected,
+.rating-stars .star:hover {
+  color: #ffb21e;
+}
+
+
+.feedback-item {
+  background: #fff;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.rating-stars {
+  display: flex;
+  gap: 6px;
+  font-size: 28px;
+  cursor: pointer;
+}
+.rating-stars .star {
+  color: #ddd;
+  transition: color 0.2s;
+}
+.rating-stars .star.selected {
+  color: #ffb21e;
+}
+.rating-stars .star:hover {
+  color: #ffc94d;
+}

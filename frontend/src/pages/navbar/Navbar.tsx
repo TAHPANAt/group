@@ -86,12 +86,14 @@ const Navbar = () => {
             <option value="Thai" style={{ color: "black" }}>Thai</option>
           </select>
 
+          {token &&
           <Link to="/CreateProfile" className="no-border-button left-font-size-large">
-
             
-              My Account
+            
+              My Profile
             
           </Link>
+          }
           <Link to="/Messenger" className="no-border-button left-font-size-large">
             message
 

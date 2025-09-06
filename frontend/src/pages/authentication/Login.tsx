@@ -14,7 +14,8 @@ export default function LoginForm() {
   const actionLogin = useEcomStore((state: any) => state.actionLogin);
   const tokenInStore = useEcomStore((state: any) => state.token);
   console.log("token from zustand:", tokenInStore);
-
+  const isAdminUser = (u: any) =>
+    u?.role?.toLowerCase?.() === "admin" || u?.username?.toLowerCase?.() === "admin";
   const persistAuth = (user: any, token?: string) => {
     const ID = Number(user?.ID ?? user?.id);
     const username = user?.UserName ?? user?.username ?? user?.userName ?? "Me";
@@ -32,14 +33,18 @@ export default function LoginForm() {
     try {
       const { user, token } = await actionLogin(values);
       persistAuth(user, token);
-
+      const admin = isAdminUser(user);
       messageApi.success({
         content: "Welcome back",
         duration: 0.8,
-        onClose: () => {
-          // ✅ เปลี่ยนเป็นไปหน้า Home (หรือจะไม่ navigate เลยก็ได้)
-          navigate("/"); 
-          // ถ้าไม่อยากเปลี่ยนหน้าเลย: ลบบรรทัด navigate("/") ออก
+      onClose: () => {
+                 if (admin) {
+            navigate("/admin", { replace: true });
+          } else {
+            // เส้นทางผู้ใช้ปกติ (ปรับได้ตามที่ต้องการ)
+            // ถ้ามี shop แล้วอาจพาไปโปรไฟล์, ไม่มีก็โฮม
+            navigate("/");
+          }
         },
       });
     } catch (err: any) {

@@ -1,8 +1,9 @@
 package entity
 
-import ("time"
-    
-    "gorm.io/gorm")
+import (
+    "time"
+    "gorm.io/gorm"
+)
 
 type People struct {
     gorm.Model
@@ -14,7 +15,8 @@ type People struct {
     BirthDay  time.Time
     Address   string
 
-    
     GenderID uint
     Gender   Gender
+
+    
 }

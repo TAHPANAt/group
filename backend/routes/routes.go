@@ -58,7 +58,7 @@ func SetupRouter() *gin.Engine {
 		api.DELETE("/shopcategories/:id", controller.DeleteShopCategory)
 		api.DELETE("/DeletePost/:id", middleware.Authz(), controller.SoftDeletePostWithProductAndImages)
 
-		api.POST("/profile", controller.CreateOrUpdateProfile)
+		//api.POST("/profile", controller.CreateOrUpdateProfile)
 		api.GET("/profile/:memberId", controller.GetProfileByMember)
 		api.POST("/cart", middleware.Authz(), controller.CreateCart)
 		api.GET("/cart", middleware.Authz(), controller.GetMyCart)
@@ -83,6 +83,23 @@ func SetupRouter() *gin.Engine {
 		api.GET("/discounts", controller.GetAvailableDiscounts)
 		api.PATCH("/orders/update-total", controller.UpdateOrderTotal)
 
+		// Profile & Account
+		api.POST("/profile", middleware.Authz(), controller.CreateOrUpdateProfile)
+		api.GET("/getprofile", middleware.Authz(), controller.GetProfileByMember)
+		api.PUT("/people/update", middleware.Authz(), controller.UpdatePeople)
+		api.DELETE("/account/delete", middleware.Authz(), controller.DeleteAccount)
+
+		// Feedback
+		api.POST("/feedback", middleware.Authz(), controller.CreateFeedback)
+		api.GET("/feedbacks", controller.GetShowFeedbacks) // ✅ ใช้ GetShowFeedbacks เท่านั้น
+		api.GET("/categories", controller.GetCategories)   // ✅ ดึงหมวดหมู่
+		api.GET("/ratings", controller.GetRatings)         // ✅ ดึงดาว
+		api.POST("/categories", controller.CreateCategoryFeedback)
+
+		// Report
+		api.POST("/reports", middleware.Authz(), controller.CreateReportProduct)
+		api.GET("/reports", controller.GetReports)
+
 		// ----------------- Messenger (DM) -----------------
 		dm := api.Group("/dm")
 		{
@@ -98,6 +115,7 @@ func SetupRouter() *gin.Engine {
 
 			dm.PATCH("/threads/:id/read", controller.MarkRead)
 			dm.POST("/upload", controller.UploadFile)
+
 		}
 	}
 

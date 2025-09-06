@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { ShoppingCartOutlined } from '@ant-design/icons';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button, Drawer } from 'antd';
 import useEcomStore from '../../../store/ecom-store';
 import axios from 'axios';
@@ -13,7 +13,7 @@ const Cardlistproduct = ({ filteredProducts }: Props) => {
     const actionUpdateQuantity = useEcomStore((state) => state.actionUpdateQuantity)
     const actionRemoveProduct = useEcomStore((state) => state.actionRemoveProduct)
     const GettotalPrice = useEcomStore((state) => state.GettotalPrice)
-
+ const navigate = useNavigate();
     const authHeader = useEcomStore((state) => state.authHeader);
 
     const carts = useEcomStore((state) => state.carts) as any[];
@@ -194,6 +194,20 @@ const Cardlistproduct = ({ filteredProducts }: Props) => {
                                 >
                                     เพิ่ม
                                 </Button>
+                                 <span
+                                    style={{ cursor: "pointer", fontSize: "20px" }}
+                                    onClick={() => {
+                                        console.log("Send to report:", {
+                                            productId: product?.Product?.ID,
+                                            sellerId: product?.Seller?.ID,
+                                        });
+
+                                        navigate(`/report?productId=${product?.Product?.ID}&sellerId=${product?.Seller?.ID}`);
+                                    }}
+
+                                >
+                                    📢
+                                </span>
 
 
                             </div>

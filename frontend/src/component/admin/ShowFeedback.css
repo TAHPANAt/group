@@ -1,0 +1,90 @@
+.feedback-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.feedback-page h2 {
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  color: #333;
+  text-align: center;
+}
+
+/* Layout เป็น grid */
+.feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* Card */
+.feedback-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feedback-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+/* Header */
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.feedback-header strong {
+  color: #2c3e50;
+  font-size: 1rem;
+}
+
+.timestamp {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* Message */
+.message {
+  font-size: 0.95rem;
+  color: #444;
+  margin-bottom: 12px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+/* Screenshot */
+.screenshot {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border: 1px solid #ddd;
+}
+
+/* Footer */
+.feedback-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #555;
+  border-top: 1px solid #eee;
+  padding-top: 8px;
+}
+
+.category {
+  font-weight: 500;
+  color: #2980b9;
+}
+
+.rating {
+  font-weight: 600;
+  color: #f39c12;
+}

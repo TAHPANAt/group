@@ -40,8 +40,8 @@ const AdminLayout: React.FC = () => {
                     onClick={(item) => {
                         switch (item.key) {
                             case "1": navigate("/admin"); break;
-                            case "2": navigate("/admin"); break;
-                            case "3": navigate("/admin"); break;
+                            case "2": navigate("/admin/ShowReportProduct"); break;
+                            case "3": navigate("/admin/ShowFeedback"); break;
                             case "4": navigate("/admin/Createcode"); break;
                             case "5": navigate("/admin/category"); break;
                             case "6": navigate("/admin/shopcategory"); break;
@@ -57,12 +57,12 @@ const AdminLayout: React.FC = () => {
                         {
                             key: '2',
                             icon: <UserOutlined />,
-                            label: 'จัดการผู้ใช้',
+                            label: 'Show Report Product',
                         },
                         {
                             key: '3',
                             icon: <UploadOutlined />,
-                            label: 'อัปโหลดไฟล์',
+                            label: 'Show Feedback',
                         },
                         {
                             key: '4',

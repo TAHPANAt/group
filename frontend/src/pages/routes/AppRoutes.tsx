@@ -15,11 +15,17 @@ import CategoryShop from "../../component/admin/CategoryShop";
 import ShopPublic from "../ShopProfile/Profile/ShopPublic";
 import Cart from "../cart/Cart";
 import CreateProfile from "../Profile/CreateProfile";
-import Account from "../Profile/Account";
+import Account from "../Profile/MyProfile";
 import OrderPage from "../order/order";
 import PayQRCodePage from "../payment/qrcodepage";
 import Createcode from "../DiscountCode/Createcode";
 import Messenger from "../Messenger/Meesenger";
+import FeedbackPage from "../Profile/Feedback";
+import Report from "../navbar/report";
+import ReportProduct from "../../component/admin/ReportProduct";
+import ShowFeedback from "../../component/admin/ShowFeedback";
+import ProtectRouteAdmin from "./ProtectRouteAdmin";
+
 
 
 
@@ -35,6 +41,9 @@ const router = createBrowserRouter([
       { path: "Cart", element: <Cart /> },
       { path: "CreateProfile", element: <CreateProfile/> },
       { path: "Account", element: <Account/> },
+      { path: "MyProfile", element: <Account/> },
+      { path: "Feedback", element: <FeedbackPage/> },
+      { path: "Report", element: <Report/> },
       { path: "Order", element: <OrderPage/> },
 
       { path: "Messenger", element: <Messenger /> },
@@ -44,16 +53,31 @@ const router = createBrowserRouter([
     ],
   },
 
-  {
-    path: "/admin",
+  /*{
+    /path: "/admin",
     element: <AdminLayout />,
     children: [
       { index: true, element: <Category /> },
       { path: "category", element: <Category /> },
       { path: "shopcategory", element: <CategoryShop /> },
       { path: "Createcode", element: <Createcode /> },
+      { path: "ShowReportProduct", element: <ReportProduct/> },
+      { path: "ShowFeedback", element: <ShowFeedback/> },
 
 
+
+    ],*/
+    {
+    path: "/admin",
+    element: <ProtectRouteAdmin element={<AdminLayout />} />, // ✅ ป้องกันที่นี่
+    children: [
+      { index: true, element: <Category /> },
+      { path: "category", element: <Category /> },
+      { path: "shopcategory", element: <CategoryShop /> },
+      { path: "Createcode", element: <Createcode /> },
+      { path: "ShowReportProduct", element: <ReportProduct/> },
+      { path: "ShowFeedback", element: <ShowFeedback/> },
+     
     ],
   },
   {
