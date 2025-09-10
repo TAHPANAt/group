@@ -69,6 +69,7 @@ func SetupRouter() *gin.Engine {
 		// Order / Checkout
 		api.POST("/order", middleware.Authz(), controller.Checkout) // สร้าง order + order item
 		api.GET("/orders/latest", middleware.Authz(), controller.GetLatestOrder)
+		api.GET("/members/me",middleware.Authz(), controller.GetMyProfile)
 
 		api.POST("/payments", controller.CreatePayment)
 		api.GET("/payments/qrcode/:order_id", controller.GetPaymentQRCode)

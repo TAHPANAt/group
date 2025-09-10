@@ -35,3 +35,17 @@ func GetLatestOrder(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{"data": order})
 }
+
+func GetMyProfile(c *gin.Context) {
+	// ดึง member_id จาก JWT middleware
+	memberID := c.GetUint("member_id")
+
+	var member entity.Member
+	// preload People มาด้วย
+	if err := config.DB().Preload("People").First(&member, memberID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Member not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": member})
+}

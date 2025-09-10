@@ -7,16 +7,14 @@ import (
 
 type People struct {
     gorm.Model
-    FirstName string
-    LastName  string
-    Email     string
-    Age       int
-    Phone     string
-    BirthDay  time.Time
-    Address   string
+    FirstName string    `json:"first_name"`
+    LastName  string    `json:"last_name"`
+    Email     string    `json:"email"`
+    Age       int       `json:"age"`
+    Phone     string    `json:"phone"`
+    BirthDay  time.Time `json:"birth_day"`
+    Address   string    `json:"address"`
 
-    GenderID uint
-    Gender   Gender
-
-    
+    GenderID uint   `json:"gender_id"`
+    Gender   Gender `json:"gender"`
 }

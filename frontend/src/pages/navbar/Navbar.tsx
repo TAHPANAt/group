@@ -1,7 +1,7 @@
-
 import useEcomStore from '../../store/ecom-store';
 import './navbar.css'
 import { Link, useNavigate } from "react-router-dom";
+
 const Navbar = () => {
   const token = useEcomStore((state: any) => state.token)
   const hasShop = useEcomStore((state: any) => state.hasShop)
@@ -9,101 +9,73 @@ const Navbar = () => {
 
   const handleClick = () => {
     if (hasShop) {
-      navigate('/user/Profile'); // ไปหน้าโปรไฟล์ร้านค้า
+      navigate('/user/Profile');
     } else {
-      navigate('/user/Create-profile'); // ไปหน้าสร้างร้านค้า
+      navigate('/user/Create-profile');
     }
-
   };
-  const handleLogout = () => {
-    // ✅ ล้างข้อมูลจาก store
-    useEcomStore.getState().clearPersistedStore();
 
-    // ✅ กลับไปหน้าแรก
+  const handleLogout = () => {
+    useEcomStore.getState().clearPersistedStore();
     navigate('/');
   };
+
   return (
     <div className="background-header">
       <div className="header-row">
         
+        {/* ---- LEFT ---- */}
         <div className="header-left">
           <Link to="/product-list" className="no-border-button left-font-size-large">
-
-            <button className="no-border-button left-font-size-large">
-              Seller Centre
-            </button>
+            Seller Centre
           </Link>
           <span>|</span>
-          {token &&(
 
-
-          <button
-            onClick={handleClick}
-            className="no-border-button left-font-size-large"
-          >
-            ShopProfile
-            <span>|</span>
-          </button>
-          )} 
-
-           <Link to="/Cart" className="no-border-button left-font-size-large">
-
-            <button className="no-border-button left-font-size-large">
-              Cart
-            </button>
-          </Link>
-
-          {token &&
-            (
-              <button onClick={handleLogout}
+          {token && (
+            <>
+              <button
+                onClick={handleClick}
                 className="no-border-button left-font-size-large"
               >
-                Logout
+                ShopProfile
               </button>
-            )
-          }
+              <span>|</span>
+            </>
+          )} 
 
+          <Link to="/Cart" className="no-border-button left-font-size-large">
+            Cart
+          </Link>
         </div>
 
+        {/* ---- RIGHT ---- */}
         <div className="header-right">
-          {!token &&(
-
-          <Link to="/login" className="no-border-button left-font-size-large">
-
-            <button className="no-border-button left-font-size-large">
-              Login/Register
-            </button>
-          </Link>
-
-          )}
-
-          <button className="no-border-button left-font-size-large">
-            Help
-          </button>
-
-          <select className="select-no-border left-font-size-large" defaultValue="English">
-            <option value="English" style={{ color: "black" }}>English</option>
-            <option value="Thai" style={{ color: "black" }}>Thai</option>
-          </select>
-
-          {token &&
-          <Link to="/CreateProfile" className="no-border-button left-font-size-large">
-            
-            
-              My Profile
-            
-          </Link>
-          }
           <Link to="/Messenger" className="no-border-button left-font-size-large">
             message
-
           </Link>
+
+          {token && (
+            <Link to="/CreateProfile" className="no-border-button left-font-size-large">
+              My Profile
+            </Link>
+          )}
+
+          {!token ? (
+            <Link to="/login" className="no-border-button left-font-size-large header-far-right">
+              Login/Register
+            </Link>
+          ) : (
+            <button 
+              onClick={handleLogout}
+              className="no-border-button left-font-size-large header-far-right"
+            >
+              Logout
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-
-
-export default Navbar
+export default Navbar;

@@ -34,7 +34,6 @@ export default function CartPage() {
   const handleUpdateCartItem = async (productId: number, newQuantity: number, itemId: number) => {
     try {
       if (newQuantity < 1) {
-        // ลบสินค้า
         await axios.delete(`/api/cart/item/product/${productId}`, {
           headers: { ...authHeader() },
         });
@@ -70,7 +69,7 @@ export default function CartPage() {
     });
   };
 
-  // ฟังก์ชันสั่งซื้อ → แค่สร้าง order และไปหน้า /Order
+  // Checkout
   const handleCheckout = async () => {
     const selectedItems = carts.filter((i: any) => i.checked);
     if (selectedItems.length === 0) {
@@ -93,8 +92,6 @@ export default function CartPage() {
       });
 
       alert("สั่งซื้อสำเร็จ บันทึกข้อมูลเรียบร้อยแล้ว");
-
-      // ✅ ไม่ต้องเคลียร์ cart ตรงนี้
       navigate("/Order");
     } catch (err) {
       console.error("Error during checkout:", err);
@@ -109,60 +106,68 @@ export default function CartPage() {
   return (
     <div className="cart-page">
       {carts.map((item: any) => (
-        <Card key={item.ID} style={{ marginBottom: 16 }}>
-          <Space align="start">
+        <Card key={item.ID} className="cart-card">
+          <div className="cart-item">
             <Checkbox
               checked={item.checked}
               onChange={(e) => toggleOne(item.ID, e.target.checked)}
+              className="cart-checkbox"
             />
             <img
               src={`http://localhost:8080${item.Product.ProductImage?.[0]?.image_path}`}
               alt={item.Product.name}
-              style={{ width: 80, height: 80, objectFit: "cover" }}
+              className="cart-thumb"
             />
-            <div>
-              <Text strong>{item.Product.name}</Text>
-              <p>ราคา: {item.Product.price} บาท</p>
-              <p>
-                จำนวน:{" "}
+
+            {/* ✅ รายละเอียดสินค้าแบบแนวนอน */}
+            <div className="cart-item-info">
+              <span className="cart-name">{item.Product.name}</span>
+              <span className="cart-price">฿{item.Product.price}</span>
+              <span className="cart-qty">
                 <Button
+                  className="cart-qty-btn"
                   onClick={() =>
                     handleUpdateCartItem(item.Product.ID, item.count - 1, item.ID)
                   }
                 >
                   -
                 </Button>
-                <span style={{ margin: "0 8px" }}>{item.count}</span>
+                <span className="cart-qty-display">{item.count}</span>
                 <Button
+                  className="cart-qty-btn"
                   onClick={() =>
                     handleUpdateCartItem(item.Product.ID, item.count + 1, item.ID)
                   }
                 >
                   +
                 </Button>
-              </p>
-              <p>รวม: {item.Product.price * item.count} บาท</p>
+              </span>
+              <span className="cart-total">฿{item.Product.price * item.count}</span>
             </div>
+
             <Button
               type="text"
               danger
               icon={<DeleteOutlined />}
+              className="cart-btn-delete"
               onClick={() =>
                 handleUpdateCartItem(item.Product.ID, 0, item.ID)
               }
             >
               ลบ
             </Button>
-          </Space>
+          </div>
         </Card>
       ))}
 
-      <Card>
+      {/* Footer */}
+      <div className="cart-footer">
         <Space>
           <Checkbox
             checked={allChecked}
             indeterminate={!allChecked && carts.some((i: any) => i.checked)}
             onChange={(e) => toggleAll(e.target.checked)}
+            className="cart-checkbox"
           >
             เลือกทั้งหมด
           </Checkbox>
@@ -170,19 +175,21 @@ export default function CartPage() {
             ลบสินค้าที่เลือก
           </Button>
         </Space>
-        <div style={{ marginTop: 16 }}>
-          <Text strong>รวมทั้งหมด: {total} บาท</Text>
+        <div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Text strong className="cart-total">
+            รวมทั้งหมด: ฿{total}
+          </Text>
 
           <Button
             type="primary"
             icon={<ShoppingOutlined />}
-            style={{ marginLeft: 16 }}
+            className="cart-btn-checkout"
             onClick={handleCheckout}
           >
             สั่งซื้อ
           </Button>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
