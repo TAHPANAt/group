@@ -7,7 +7,7 @@ import "./payment.css";
 interface PaymentResponse {
   order_id: string;
   qr_code: string;
-  total_amount: number; // เราจะเพิ่ม amount จาก backend
+  total_amount: number;
 }
 
 const PayQRCodePage: React.FC = () => {
@@ -15,17 +15,15 @@ const PayQRCodePage: React.FC = () => {
   const navigate = useNavigate();
   const [payment, setPayment] = useState<PaymentResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSuccess, setShowSuccess] = useState(false); // สำหรับ modal
 
   useEffect(() => {
     const fetchQRCode = async () => {
       if (!orderId) return;
-
       try {
         const res = await axios.get(`/api/payments/qrcode/${orderId}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-
-        // สมมติ backend ส่ง qr_code และ total_amount
         setPayment({
           order_id: res.data.order_id,
           qr_code: res.data.qr_code,
@@ -38,27 +36,28 @@ const PayQRCodePage: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchQRCode();
   }, [orderId]);
 
   const handleConfirmPayment = () => {
-    navigate("/checkout-success");
+    setShowSuccess(true); // แสดง modal
+    setTimeout(() => {
+      navigate("/checkout-success"); // หลัง 2 วินาทีไปหน้า success
+    }, 2000);
   };
 
   if (loading) return <p>กำลังโหลด QR Code...</p>;
   if (!payment) return <p>ไม่พบ QR Code สำหรับคำสั่งซื้อนี้</p>;
 
-  // เราจะเอา qr_code + จำนวนเงิน เป็น string ให้สแกนจ่ายได้
   const qrValue = `ORDER:${payment.order_id};AMOUNT:${payment.total_amount}`;
 
   return (
-    <div className="payment-container" style={{ textAlign: "center", padding: 50 }}>
+    <div className="payment-container">
       <h2>💳 ชำระเงินด้วย QR Code</h2>
 
-      <div className="summary-card" style={{ marginBottom: 30 }}>
+      <div className="summary-card">
         <p>Order No: <strong>#{payment.order_id}</strong></p>
-        <p>Amount to Pay: <strong>฿{payment.total_amount.toLocaleString()}</strong></p>
+        <p>Amount to Pay: <strong className="amount">฿{payment.total_amount.toLocaleString()}</strong></p>
       </div>
 
       <div className="qr-card">
@@ -70,20 +69,20 @@ const PayQRCodePage: React.FC = () => {
 
       <button
         className="confirm-btn"
-        style={{
-          marginTop: 30,
-          padding: "12px 24px",
-          fontSize: 18,
-          backgroundColor: "#d17a00",
-          color: "white",
-          border: "none",
-          borderRadius: 8,
-          cursor: "pointer",
-        }}
         onClick={handleConfirmPayment}
       >
         ยืนยันชำระเงินแล้ว
       </button>
+
+      {/* Success Modal */}
+      {showSuccess && (
+        <div className="success-modal">
+          <div className="success-content">
+            <h3>✅ ชำระเงินสำเร็จ!</h3>
+            <p>ขอบคุณที่ใช้บริการของเรา</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -54,27 +54,26 @@ const OrderPage: React.FC = () => {
   const [customVoucher, setCustomVoucher] = useState("");
   const [paymentMethodID, setPaymentMethodID] = useState<number | null>(null);
   const [people, setPeople] = useState<People | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const tokenInStore = useEcomStore((state: any) => state.token);
   const navigate = useNavigate();
   const clearCart = () => useEcomStore.setState({ carts: [] });
 
+  // Fetch profile
   useEffect(() => {
-  const fetchProfile = async () => {
-    try {
-      const res = await axios.get("/api/members/me", {
-        headers: { Authorization: `Bearer ${tokenInStore}` },
-      });
-      console.log("Profile API response:", res.data.data);
-
-      setPeople(res.data.data.people);
-    } catch (err) {
-      console.error("Failed to fetch profile:", err);
-    }
-  };
-  fetchProfile();
-}, [tokenInStore]);
-
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get("/api/members/me", {
+          headers: { Authorization: `Bearer ${tokenInStore}` },
+        });
+        setPeople(res.data.data.people);
+      } catch (err) {
+        console.error("Failed to fetch profile:", err);
+      }
+    };
+    fetchProfile();
+  }, [tokenInStore]);
 
   // Fetch latest order
   useEffect(() => {
@@ -97,7 +96,6 @@ const OrderPage: React.FC = () => {
     fetchLatestOrder();
   }, [tokenInStore]);
 
-  // Calculate subtotal
   const subtotal = order
     ? order.order_items.reduce(
         (acc, item) => acc + item.product.price * item.quantity,
@@ -105,7 +103,7 @@ const OrderPage: React.FC = () => {
       )
     : 0;
 
-  // Fetch available vouchers
+  // Fetch vouchers
   useEffect(() => {
     const fetchVouchers = async () => {
       if (!subtotal) return;
@@ -113,7 +111,6 @@ const OrderPage: React.FC = () => {
         const res = await axios.get(`/api/discounts?total=${subtotal}`, {
           headers: { Authorization: `Bearer ${tokenInStore}` },
         });
-
         const vouchers = res.data.data.map((v: any) => ({
           id: v.id,
           code: v.name,
@@ -121,7 +118,6 @@ const OrderPage: React.FC = () => {
           minOrder: v.min_order,
           imageURL: v.image_url,
         }));
-
         setAvailableVouchers(vouchers);
       } catch (err) {
         console.error("Error fetching vouchers:", err);
@@ -133,7 +129,6 @@ const OrderPage: React.FC = () => {
   // Apply voucher
   const applyVoucher = async (voucher: Voucher) => {
     if (!order) return;
-
     setSelectedVoucher(voucher);
     setVoucherModal(false);
 
@@ -149,7 +144,6 @@ const OrderPage: React.FC = () => {
         },
         { headers: { Authorization: `Bearer ${tokenInStore}` } }
       );
-
       setOrder((prev) =>
         prev ? { ...prev, total_price: res.data.total_price } : prev
       );
@@ -202,21 +196,24 @@ const OrderPage: React.FC = () => {
         );
       }
 
-      const res = await axios.post(
-        "/api/payments",
-        {
-          order_id: order.id,
-          payment_method_id: paymentMethodID,
-        },
-        { headers: { Authorization: `Bearer ${tokenInStore}` } }
-      );
-
-      clearCart();
-
       if (paymentMethodID === 1) {
+        // QR Code Payment
+        await axios.post(
+          "/api/payments",
+          { order_id: order.id, payment_method_id: paymentMethodID },
+          { headers: { Authorization: `Bearer ${tokenInStore}` } }
+        );
+        clearCart();
         navigate(`/user/pay-qrcode/${order.id}`);
-      } else {
-        navigate("/checkout-success");
+      } else if (paymentMethodID === 2) {
+        // Cash on Delivery → แสดง Modal Success
+        clearCart();
+        setShowSuccessModal(true);
+
+        // เด้งไปหน้าหลักหลัง 2 วินาที
+        setTimeout(() => {
+          navigate("/");
+        }, 2000);
       }
     } catch (err: any) {
       console.error("Checkout failed:", err.response?.data || err.message);
@@ -362,7 +359,7 @@ const OrderPage: React.FC = () => {
                 }
                 onClick={() => setPaymentMethodID(2)}
               >
-                เก็บเงินปลายทาง
+                Cash on Delivery
               </button>
               <button
                 className={
@@ -398,9 +395,7 @@ const OrderPage: React.FC = () => {
               <p>
                 Payment Method:{" "}
                 <strong>
-                  {paymentMethodID === 2
-                    ? "Cash on Delivery"
-                    : "QR Payment"}
+                  {paymentMethodID === 2 ? "Cash on Delivery" : "QR Payment"}
                 </strong>
               </p>
             )}
@@ -413,10 +408,20 @@ const OrderPage: React.FC = () => {
               onClick={handleCheckout}
               disabled={!paymentMethodID}
             >
-              ชำระเงิน
+              Checkout
             </button>
           </div>
         </>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>✅ Checkout Successful!</h2>
+            <p>Redirecting to homepage...</p>
+          </div>
+        </div>
       )}
     </div>
   );

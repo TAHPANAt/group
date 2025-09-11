@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import useEcomStore from "../../store/ecom-store";
 import "./Report.css";
@@ -9,10 +9,10 @@ export default function ReportPage() {
   const [searchParams] = useSearchParams();
   const productId = searchParams.get("productId");
   const sellerId = searchParams.get("sellerId");
-  console.log("query params:", { productId, sellerId });
+  const navigate = useNavigate();
 
+  console.log("Query params:", { productId, sellerId });
 
-  // ✅ mock ประเภทรีพอร์ต
   const reportTypes = [
     { id: "1", name: "สแปม", description: "โฆษณาหรือข้อความรบกวน" },
     { id: "2", name: "ไม่เหมาะสม", description: "เนื้อหาไม่เหมาะสม" },
@@ -25,11 +25,15 @@ export default function ReportPage() {
     description: "",
   });
 
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    console.log("Submit clicked:", form);
 
     if (!form.reportTypeId) {
       alert("⚠️ กรุณาเลือกประเภทการรีพอร์ตก่อน");
+      console.log("Report type not selected");
       return;
     }
 
@@ -40,40 +44,50 @@ export default function ReportPage() {
       report_type_id: parseInt(form.reportTypeId),
     };
 
+    console.log("Sending report data:", reportData);
+
     try {
       const res = await axios.post("http://localhost:8080/api/reports", reportData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("ส่ง Report สำเร็จ ✅", res.data);
-      alert("ส่ง Report สำเร็จ ✅");
+      console.log("Report submitted successfully ✅", res.data);
 
       setForm({ targetType: "product", reportTypeId: "", description: "" });
+
+      setToast({ show: true, message: "ส่งรายงานสำเร็จ ✅", type: "success" });
+
+      // Redirect หลัง 1.5 วินาที
+      setTimeout(() => {
+        setToast({ show: false, message: "", type: "success" });
+        console.log("Redirecting to home page");
+        navigate("/");
+      }, 1500);
+
     } catch (err) {
-      console.error("ส่ง Report ล้มเหลว ❌", err);
-      alert("ส่ง Report ล้มเหลว ❌");
+      console.error("Failed to submit report ❌", err);
+      setToast({ show: true, message: "ส่งรายงานล้มเหลว ❌", type: "error" });
+
+      // ปิด toast หลัง 2 วินาที
+      setTimeout(() => setToast({ show: false, message: "", type: "error" }), 2000);
     }
   }
 
   return (
     <div className="report-page">
+      {/* Toast Notification */}
+      {toast.show && <div className={`toast ${toast.type}`}>{toast.message}</div>}
+
       <div className="report-card">
         <h2>📢 ส่ง Report</h2>
 
         <form onSubmit={handleSubmit} className="report-form">
-          {/* เลือกประเภทการรีพอร์ต */}
           <label>เลือกประเภทการรีพอร์ต</label>
           <select
             value={form.reportTypeId}
-            onChange={(e) =>
-              setForm({ ...form, reportTypeId: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, reportTypeId: e.target.value })}
           >
-            <option value="" disabled hidden>
-              -- เลือกประเภท --
-            </option>
+            <option value="" disabled hidden>-- เลือกประเภท --</option>
             {reportTypes.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name} ({r.description})
@@ -81,13 +95,10 @@ export default function ReportPage() {
             ))}
           </select>
 
-          {/* ช่องรายละเอียด */}
           <label>รายละเอียดเพิ่มเติม</label>
           <textarea
             value={form.description}
-            onChange={(e) =>
-              setForm({ ...form, description: e.target.value })
-            }
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="กรอกรายละเอียดเกี่ยวกับปัญหาที่พบ..."
             rows={4}
           />
@@ -97,12 +108,10 @@ export default function ReportPage() {
               💾 ส่ง Report
             </button>
           </div>
-          <Link to="shop/:sellerId" className="no-border-button left-font-size-large">
-                                
-                                
-                                  ยกเลิก
-                                
-                              </Link>
+
+          <Link to={`/shop/${sellerId}`} className="no-border-button left-font-size-large">
+            ยกเลิก
+          </Link>
         </form>
       </div>
     </div>

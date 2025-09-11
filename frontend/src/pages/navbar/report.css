@@ -3,7 +3,8 @@
   justify-content: center;
   padding: 2rem;
   background: #f9fafb;
-  min-height:50vh;
+  min-height: 50vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .report-card {
@@ -13,6 +14,12 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 500px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.report-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .report-card h2 {
@@ -38,6 +45,19 @@
   font-size: 1rem;
 }
 
+.report-form textarea {
+  width: 100%;
+  max-width: 100%;
+  min-height: 120px;
+  padding: 0.6rem;
+  margin-top: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
 .report-actions {
   margin-top: 1.5rem;
   text-align: center;
@@ -57,15 +77,38 @@
 .btn-save:hover {
   background: #1e40af;
 }
-.report-form textarea {
-  width: 100%;              /* กว้างเต็มพื้นที่ parent */
-  max-width: 100%;          /* ไม่ให้ล้น */
-  min-height: 120px;        /* สูงขั้นต่ำ */
-  padding: 0.6rem;
-  margin-top: 0.4rem;
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  resize: vertical;         /* ให้ user ปรับสูงได้เอง */
-  box-sizing: border-box;   /* กันล้น */
+
+/* =================== Toast =================== */
+.toast {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 1.5rem;
+  border-radius: 0.8rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 9999;
+  color: white;
+  animation: dropDown 0.5s ease, fadeOut 0.5s ease 2s forwards;
+}
+
+/* สี success / error */
+.toast.success {
+  background-color: #22c55e; /* เขียว */
+}
+
+.toast.error {
+  background-color: #ef4444; /* แดง */
+}
+
+/* Animation เด้งลงมา */
+@keyframes dropDown {
+  from { opacity: 0; transform: translate(-50%, -30px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Animation fade out */
+@keyframes fadeOut {
+  to { opacity: 0; transform: translate(-50%, -30px); }
 }

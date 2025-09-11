@@ -1,12 +1,13 @@
 import React from "react";
-import { ShoppingOutlined, DeleteOutlined } from "@ant-design/icons";
-import { Button, Card, Checkbox, Space, Typography } from "antd";
+import { ShoppingOutlined, DeleteOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
+import { Button, Card, Checkbox, Space, Typography, Modal } from "antd";
 import useEcomStore from "../../store/ecom-store";
 import axios from "axios";
 import "./Cart.css";
 import { useNavigate } from "react-router-dom";
 
 const { Text } = Typography;
+const { confirm } = Modal;
 
 export default function CartPage() {
   const carts = useEcomStore((state) => state.carts);
@@ -30,42 +31,83 @@ export default function CartPage() {
     });
   };
 
+  // ฟังก์ชันแสดง Modal ยืนยันการลบสินค้า
+  const showDeleteConfirm = (productName: string, onOk: () => Promise<void>) => {
+    confirm({
+      title: <span style={{ color: "#d32f2f", fontWeight: 600 }}>ยืนยันการลบสินค้า</span>,
+      icon: <ExclamationCircleOutlined style={{ color: "#d32f2f", fontSize: 28 }} />,
+      content: <div style={{ fontSize: 14, color: "#333", marginTop: 4 }}>
+        คุณต้องการลบสินค้า <strong>{productName}</strong> หรือไม่?
+      </div>,
+      okText: "ลบ",
+      okType: "danger",
+      cancelText: "ยกเลิก",
+      centered: true,
+      maskClosable: true,
+      okButtonProps: { style: { fontWeight: 600, borderRadius: 8, padding: "4px 16px" } },
+      cancelButtonProps: { style: { borderRadius: 8, padding: "4px 16px" } },
+      onOk,
+    });
+  };
+
   // Update quantity / delete
-  const handleUpdateCartItem = async (productId: number, newQuantity: number, itemId: number) => {
-    try {
-      if (newQuantity < 1) {
+  const handleUpdateCartItem = (productId: number, newQuantity: number, itemId: number, productName?: string) => {
+    if (newQuantity < 1) {
+      showDeleteConfirm(productName || "", async () => {
         await axios.delete(`/api/cart/item/product/${productId}`, {
           headers: { ...authHeader() },
         });
         actionRemoveProduct(itemId);
-      } else {
-        await axios.post(
-          "/api/cart",
-          { cart_items: [{ product_id: productId, quantity: newQuantity }] },
-          { headers: { ...authHeader(), "Content-Type": "application/json" } }
-        );
-        actionUpdateQuantity(itemId, newQuantity);
-      }
-    } catch (err) {
-      console.error("Error updating cart item:", err);
-      alert("อัปเดตตะกร้าไม่สำเร็จ");
+      });
+    } else {
+      axios.post(
+        "/api/cart",
+        { cart_items: [{ product_id: productId, quantity: newQuantity }] },
+        { headers: { ...authHeader(), "Content-Type": "application/json" } }
+      )
+      .then(() => actionUpdateQuantity(itemId, newQuantity))
+      .catch(err => {
+        console.error("Error updating cart item:", err);
+        alert("อัปเดตตะกร้าไม่สำเร็จ");
+      });
     }
   };
 
   // ลบสินค้าที่เลือก
-  const deleteSelected = async () => {
-    for (const item of carts.filter((i: any) => i.checked)) {
-      try {
-        await axios.delete(`/api/cart/item/product/${item.Product.ID}`, {
-          headers: { ...authHeader() },
-        });
-      } catch (err) {
-        console.error("Error deleting cart item:", err);
-        alert(`ลบสินค้า ${item.Product.name} ไม่สำเร็จ`);
-      }
+  const deleteSelected = () => {
+    const selectedItems = carts.filter((i: any) => i.checked);
+    if (selectedItems.length === 0) {
+      alert("กรุณาเลือกสินค้าที่ต้องการลบ");
+      return;
     }
-    useEcomStore.setState({
-      carts: carts.filter((i: any) => !i.checked),
+
+    confirm({
+      title: <span style={{ color: "#d32f2f", fontWeight: 600 }}>ยืนยันการลบสินค้า</span>,
+      icon: <ExclamationCircleOutlined style={{ color: "#d32f2f", fontSize: 28 }} />,
+      content: <div style={{ fontSize: 14, color: "#333", marginTop: 4 }}>
+        คุณต้องการลบสินค้าที่เลือกจำนวน {selectedItems.length} ชิ้นหรือไม่?
+      </div>,
+      okText: "ลบทั้งหมด",
+      okType: "danger",
+      cancelText: "ยกเลิก",
+      centered: true,
+      maskClosable: true,
+      okButtonProps: { style: { fontWeight: 600, borderRadius: 8, padding: "4px 16px" } },
+      cancelButtonProps: { style: { borderRadius: 8, padding: "4px 16px" } },
+      onOk() {
+        return Promise.all(selectedItems.map(item =>
+          axios.delete(`/api/cart/item/product/${item.Product.ID}`, { headers: { ...authHeader() } })
+        ))
+        .then(() => {
+          useEcomStore.setState({
+            carts: carts.filter((i: any) => !i.checked),
+          });
+        })
+        .catch(err => {
+          console.error("Error deleting selected cart items:", err);
+          alert("ลบสินค้าที่เลือกไม่สำเร็จ");
+        });
+      },
     });
   };
 
@@ -91,7 +133,7 @@ export default function CartPage() {
         headers: { ...authHeader(), "Content-Type": "application/json" },
       });
 
-      alert("สั่งซื้อสำเร็จ บันทึกข้อมูลเรียบร้อยแล้ว");
+      alert("สั่งซื้อสำเร็จ");
       navigate("/Order");
     } catch (err) {
       console.error("Error during checkout:", err);
@@ -107,67 +149,58 @@ export default function CartPage() {
     <div className="cart-page">
       {carts.map((item: any) => (
         <Card key={item.ID} className="cart-card">
-          <div className="cart-item">
+          <Space align="center" style={{ width: "100%", justifyContent: "space-between" }}>
             <Checkbox
               checked={item.checked}
               onChange={(e) => toggleOne(item.ID, e.target.checked)}
-              className="cart-checkbox"
             />
             <img
               src={`http://localhost:8080${item.Product.ProductImage?.[0]?.image_path}`}
               alt={item.Product.name}
               className="cart-thumb"
             />
-
-            {/* ✅ รายละเอียดสินค้าแบบแนวนอน */}
             <div className="cart-item-info">
               <span className="cart-name">{item.Product.name}</span>
-              <span className="cart-price">฿{item.Product.price}</span>
+              <span className="cart-price">{item.Product.price} บาท</span>
               <span className="cart-qty">
                 <Button
-                  className="cart-qty-btn"
                   onClick={() =>
-                    handleUpdateCartItem(item.Product.ID, item.count - 1, item.ID)
+                    handleUpdateCartItem(item.Product.ID, item.count - 1, item.ID, item.Product.name)
                   }
                 >
                   -
                 </Button>
                 <span className="cart-qty-display">{item.count}</span>
                 <Button
-                  className="cart-qty-btn"
                   onClick={() =>
-                    handleUpdateCartItem(item.Product.ID, item.count + 1, item.ID)
+                    handleUpdateCartItem(item.Product.ID, item.count + 1, item.ID, item.Product.name)
                   }
                 >
                   +
                 </Button>
               </span>
-              <span className="cart-total">฿{item.Product.price * item.count}</span>
+              <span className="cart-total">{item.Product.price * item.count} บาท</span>
             </div>
-
             <Button
               type="text"
               danger
               icon={<DeleteOutlined />}
-              className="cart-btn-delete"
               onClick={() =>
-                handleUpdateCartItem(item.Product.ID, 0, item.ID)
+                handleUpdateCartItem(item.Product.ID, 0, item.ID, item.Product.name)
               }
             >
               ลบ
             </Button>
-          </div>
+          </Space>
         </Card>
       ))}
 
-      {/* Footer */}
-      <div className="cart-footer">
+      <Card className="cart-summary">
         <Space>
           <Checkbox
             checked={allChecked}
             indeterminate={!allChecked && carts.some((i: any) => i.checked)}
             onChange={(e) => toggleAll(e.target.checked)}
-            className="cart-checkbox"
           >
             เลือกทั้งหมด
           </Checkbox>
@@ -175,21 +208,18 @@ export default function CartPage() {
             ลบสินค้าที่เลือก
           </Button>
         </Space>
-        <div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Text strong className="cart-total">
-            รวมทั้งหมด: ฿{total}
-          </Text>
-
+        <div className="cart-footer">
+          <Text strong>รวมทั้งหมด: {total} บาท</Text>
           <Button
             type="primary"
             icon={<ShoppingOutlined />}
-            className="cart-btn-checkout"
+            style={{ marginLeft: 16 }}
             onClick={handleCheckout}
           >
             สั่งซื้อ
           </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
